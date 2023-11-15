@@ -1,0 +1,4 @@
+spotipy
+click
+vyper-config
+Pillow

@@ -1,0 +1,7 @@
+**/__pycache__/
+.idea/
+.code/
+venv/
+*.yaml
+**/spotify-media-controller.yml
+.cache-dylan.d.randall
