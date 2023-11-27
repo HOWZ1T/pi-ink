@@ -1,4 +1,4 @@
 .PHONY: lint
 lint:
-	black ./pi-ink
-	isort ./pi-ink
+	black ./pi_ink
+	isort ./pi_ink

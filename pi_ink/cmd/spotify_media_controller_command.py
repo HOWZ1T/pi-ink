@@ -1,19 +1,17 @@
 import logging
-import os.path
 import sys
 import time
 from os import environ
+from pathlib import Path
 
 import click
-import spotipy
-import vyper
-from pi_ink.spotify_media_controller import SpotifyMediaController
-from tkinter import Tk, Label
-from PIL import ImageTk
 
+from pi_ink.config import Config
+from pi_ink.displays import EDisplayResponse, TkinterEinkMockDisplay
+from pi_ink.renders import ImageRenderer
+from pi_ink.spotify import Spotify
 
 logger = logging.getLogger(__name__)
-v = vyper.Vyper()
 
 
 class LogFilter(logging.Filter):
@@ -37,14 +35,15 @@ class LogFilter(logging.Filter):
 
 
 def initialize_environment(
-    config_path: str, config_name: str, default_scopes: str, debug: bool
+    username: str, redirect_uri: str, config_path: str, default_scopes: str, debug: bool
 ):
     """
     Initializes the environment, including the logging and vyper setup, for the application.
 
     Args:
+        username (str): spotify username
+        redirect_uri (str): redirect uri for spotify oauth
         config_path (str): path to config file
-        config_name (str): name of config file (without extension)
         default_scopes (str): default scopes to use for spotify oauth
         debug (bool): whether or not to enable debug logging
     """
@@ -71,6 +70,9 @@ def initialize_environment(
         # disable vyper debug logging
         logging.getLogger("vyper").setLevel(logging.INFO)
         logging.getLogger("vyper.util").setLevel(logging.INFO)
+
+        # disable PIL debug logging
+        logging.getLogger("PIL.PngImagePlugin").setLevel(logging.INFO)
     else:
         logging.basicConfig(
             format="%(asctime)s | %(name)60s | %(funcName)60s() | %(levelname)8s | %(message)s | extra=%(extra)s",
@@ -79,38 +81,30 @@ def initialize_environment(
             handlers=logging_handlers,
         )
 
-    # setup vyper
-    # remove file extension from config name
-    if "." in config_name:
-        config_name = config_name.split(".")[0]
-
+    # setup config
     # make sure config path is absolute
-    config_path = os.path.abspath(config_path)
+    config_path = str(Path(config_path).resolve())
+    conf = Config.instance()
+    conf.read_config(config_path)
 
-    logging.info(
-        "looking for config",
-        extra={"config-path": config_path, "config-name": config_name},
-    )
+    # setup environment variables coming from cli args
+    conf.set("username", username)
 
-    # setup config from config file with vyper
-    v.add_config_path(config_path)
-    v.set_config_name(config_name)
-    v.set_config_type("yaml")
-    v.read_in_config()
+    if (
+        redirect_uri is not None
+    ):  # will override redirect uri from config file with uri from cli arg (if given)
+        conf.set("redirect_uri", redirect_uri)
 
-    # set vyper defaults
-    v.set_default("scope", default_scopes)
+    if conf.get("scope") is None:
+        # sets scope to defaults if no scope is given from the config file
+        conf.set("scope", default_scopes)
+
+    logging.info(f"environment initialized")
 
 
 @click.command(name="spotify")
 @click.argument("username")
-@click.option("--config-path", "-c", default="./", help="path to config file")
-@click.option(
-    "--config-name",
-    "-n",
-    default="spotify-media-controller",
-    help="name of config file",
-)
+@click.option("--config-path", "-c", help="path to config file")
 @click.option(
     "--redirect-uri",
     "-r",
@@ -118,69 +112,40 @@ def initialize_environment(
     help="redirect uri for spotify oauth",
 )
 @click.option("--debug", "-d", default=False, is_flag=True, help="enable debug logging")
-def main(
-    username: str, config_path: str, config_name: str, redirect_uri: str, debug: bool
-):
+def main(username: str, config_path: str, redirect_uri: str, debug: bool):
     initialize_environment(
+        username,
+        redirect_uri,
         config_path,
-        config_name,
-        "user-read-playback-state user-modify-playback-state user-read-currently-playing",
+        "user-read-playback-state user-read-currently-playing user-read-recently-played",
         debug,
     )
 
-    client_id = v.get("client_id")
-    client_secret = v.get("client_secret")
+    spotify = Spotify.instance()
+    img_renderer = ImageRenderer()
+    display = TkinterEinkMockDisplay()
+    display._root.attributes("-topmost", True)
+    frame = img_renderer.render_frame(spotify)
+    display.set_frame(frame)
+    spotify_poll_interval = 15  # in seconds
+    t0 = time.time()
+    while True:
+        t1 = time.time()
+        if t1 - t0 >= spotify_poll_interval:
+            logger.info(f"polling spotify & updating frame")
+            frame = img_renderer.render_frame(spotify)
+            display.set_frame(frame)
+            t0 = time.time()  # not setting to t1 since render_frame takes time
 
-    assert client_id is not None, "client_id is required"
-    assert client_secret is not None, "client_secret is required"
+        res = display.display_frame()
 
-    # login to spotify using OAuth
-    scope = v.get("scope")
-    logger.info(f"logging in as {username}", extra={"scope": scope})
-    logger.debug(
-        "client details",
-        extra={
-            "client_id": f"{client_id[:-6]}******",
-            "client_secret": f"{client_secret[:-6]}******",
-        },
-    )
+        if res.response == EDisplayResponse.ERROR:
+            logger.error(f"error displaying frame: {res.value}")
+            break
 
-    redirect_uri = (
-        v.get("redirect_uri") if v.get("redirect_uri") is not None else redirect_uri
-    )
-    logger.info(f"redirect uri: {redirect_uri}")
-
-    sp = spotipy.Spotify(
-        auth_manager=spotipy.SpotifyOAuth(
-            scope=scope,
-            username=username,
-            client_id=client_id,
-            client_secret=client_secret,
-            open_browser=False,
-            redirect_uri=redirect_uri,
-        )
-    )
-
-    app = SpotifyMediaController(sp)
-    current = app.construct_mockup_display()
-
-    # create a Tk window to display the image that changes every 40 seconds
-    window = Tk()
-    window.title("Spotify Media Controller")
-    window.geometry("800x480")
-
-    # create a label to display the image
-    label = Label(window, image=ImageTk.PhotoImage(current))
-    label.pack()
-
-    def callback(e):
-        current2 = app.construct_mockup_display()
-        img2 = ImageTk.PhotoImage(current2)
-        label.configure(image=img2)
-        label.image = img2
-
-    window.bind('<Return>', callback)
-    window.mainloop()
+        if res.response == EDisplayResponse.NOT_READY:
+            logger.info(f"display not ready, waiting {res.value}s")
+            time.sleep(res.value)
 
 
 if __name__ == "__main__":
