@@ -23,7 +23,11 @@ class ImageRenderer(IRenderer):
     def __init__(self):
         self._font_path = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__), "..", "fonts", "SourceCodePro-Black.ttf"
+                os.path.dirname(__file__),
+                "..",
+                "assets",
+                "fonts",
+                "SourceCodePro-Black.ttf",
             )
         )
         self._drop_shadow_300px = os.path.abspath(

@@ -8,7 +8,7 @@ import click
 
 from pi_ink.config import Config
 from pi_ink.displays import EDisplayResponse, TkinterEinkMockDisplay
-from pi_ink.renders import ImageRenderer
+from pi_ink.renderers import ImageRenderer
 from pi_ink.spotify import Spotify
 
 logger = logging.getLogger(__name__)
