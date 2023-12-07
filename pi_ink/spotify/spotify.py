@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Self
+from typing import List, Optional
 
 import spotipy
 from spotipy.client import Spotify as SpotifyClient
@@ -12,7 +12,7 @@ conf = Config.instance()
 
 
 class Spotify:
-    _instance: Self = None
+    _instance = None
     client: SpotifyClient
 
     @classmethod

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Self
+from typing import Any, Dict
 
 from .loaders import __all__ as _loader_names
 from .loaders.iconfig_loader import IConfigLoader
@@ -26,13 +26,13 @@ def _dyn_import(name: str):
 class Config:
     _kv_dict: Dict[str, Any] = {}
     _loaders: Dict[str, IConfigLoader] = {}
-    _instance: Self = None
+    _instance = None
 
     def __init__(self):
         raise RuntimeError("Call instance() instead")
 
     @classmethod
-    def instance(cls) -> Self:
+    def instance(cls):
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
             for loader_name in _loader_names:

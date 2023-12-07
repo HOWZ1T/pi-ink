@@ -381,4 +381,4 @@ class ImageRenderer(IRenderer):
 
         # TODO photo frame mode of last 50 played tracks if no track has been played in the last 15 minutes
         # this (photo frame) functionality should be in the driver (cmd/spotify_media_controller_command.py)
-        return self.render_frame_from_track(track)
+        return self.render_frame_from_track(track), track

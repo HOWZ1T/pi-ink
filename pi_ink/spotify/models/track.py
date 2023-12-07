@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Self
+from typing import Any, Callable, Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -19,7 +19,7 @@ class Track:
         is_loved_fn: Callable[[Any], List[bool]],
         last_played: Dict[str, Any],
         item_index: int = 0,
-    ) -> Self:
+    ):
         """
         Constructs a track from the last played response from Spotify API.
 
@@ -88,7 +88,7 @@ class Track:
     @classmethod
     def construct_song_from_currently_playing(
         cls, is_loved_fn: Callable[[Any], List[bool]], currently_playing: Dict[str, Any]
-    ) -> Self:
+    ):
         """
         Constructs a track from the currently playing response from Spotify API.
 

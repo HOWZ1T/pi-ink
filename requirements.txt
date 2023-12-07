@@ -2,3 +2,4 @@ spotipy
 click
 vyper-config
 Pillow
+inky[rpi,example-depends]
