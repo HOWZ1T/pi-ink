@@ -5,3 +5,4 @@ venv/
 *.yaml
 **/spotify-media-controller.yml
 .cache-dylan.d.randall
+**/.DS_Store

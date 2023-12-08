@@ -28,7 +28,9 @@ class TkinterEinkMockDisplay(IDisplay):
         self._label = Label(self._root)
         self._label.place(x=0, y=0, width=600, height=448)
 
-    def set_frame(self, frame: Image) -> None:
+    def set_frame(
+        self, frame: Image, saturation: float = 0.5, dynamic_saturation: bool = False
+    ) -> None:
         if self._frame is not None:
             del self._frame  # del previous frame's image resource
 

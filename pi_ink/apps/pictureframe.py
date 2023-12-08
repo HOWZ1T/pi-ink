@@ -251,7 +251,14 @@ class PictureFrame(IApp):
 
             self._display_busy = True
             frame = img_renderer.render_picture_frame(self._cur_pic_img)
-            display.set_frame(frame)
+            sat = kwargs.get("saturation", 0.5)
+            dynamic_saturation = kwargs.get("dynamic_saturation", False)
+            logger.info(
+                f"displaying frame [saturation={sat}, dynamic_saturation={dynamic_saturation}]"
+            )
+            display.set_frame(
+                frame, saturation=sat, dynamic_saturation=dynamic_saturation
+            )
             res = display.display_frame()
 
             if res.response == EDisplayResponse.ERROR:

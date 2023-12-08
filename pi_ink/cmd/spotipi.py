@@ -111,8 +111,18 @@ def initialize_environment(
 )
 @click.option("--debug", "-d", default=False, is_flag=True, help="enable debug logging")
 @click.option("--app-name", "-a", default="spotipi", help="name of app to run")
+@click.option("--saturation", "-s", default=0.5, help="saturation of display")
+@click.option(
+    "--dynamic-saturation", "-ds", default=False, help="enable dynamic saturation"
+)
 def main(
-    username: str, config_path: str, redirect_uri: str, debug: bool, app_name: str
+    username: str,
+    config_path: str,
+    redirect_uri: str,
+    debug: bool,
+    app_name: str,
+    saturation: float,
+    dynamic_saturation: bool,
 ):
     initialize_environment(
         username,
@@ -123,7 +133,7 @@ def main(
     )
 
     app = app_factory(app_name)
-    app.run()
+    app.run(saturation=saturation, dynamic_saturation=dynamic_saturation)
 
 
 if __name__ == "__main__":

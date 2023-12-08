@@ -5,12 +5,16 @@ from .display_result import DisplayResult
 
 
 class IDisplay(ABC):
-    def set_frame(self, frame: Any) -> None:
+    def set_frame(
+        self, frame: Any, saturation: float = 0.5, dynamic_saturation: bool = False
+    ) -> None:
         """
         Sets the frame to be displayed.
 
         Args:
             frame (Any): frame to be displayed
+            saturation (float): the saturation of the frame. Defaults to 0.5
+            dynamic_saturation (bool): whether to dynamically adjust the saturation of the frame. Defaults to False
         """
         raise NotImplementedError("set_frame() not implemented")
 

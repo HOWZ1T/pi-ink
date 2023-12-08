@@ -42,7 +42,14 @@ class SpotiPi(IApp):
 
             logger.info(f"new track detected, updating frame")
             frame = img_renderer.render_frame_from_track(new_track)
-            display.set_frame(frame)
+            sat = kwargs.get("saturation", 0.5)
+            dynamic_saturation = kwargs.get("dynamic_saturation", False)
+            logger.info(
+                f"displaying frame [saturation={sat}, dynamic_saturation={dynamic_saturation}]"
+            )
+            display.set_frame(
+                frame, saturation=sat, dynamic_saturation=dynamic_saturation
+            )
             res = display.display_frame()
 
             if res.response == EDisplayResponse.ERROR:
