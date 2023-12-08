@@ -1,10 +1,12 @@
 import logging
 import time
+
+from inky.auto import auto
 from PIL import Image
+
 from .display_result import DisplayResult
 from .edisplay_response import EDisplayResponse
 from .idisplay import IDisplay
-from inky.auto import auto
 
 logger = logging.getLogger(__name__)
 

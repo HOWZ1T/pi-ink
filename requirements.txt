@@ -1,5 +1,5 @@
 spotipy
 click
 vyper-config
-Pillow
+Pillow>=10.1
 inky[rpi,example-depends]

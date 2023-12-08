@@ -4,7 +4,7 @@ import tempfile
 from typing import Any
 
 import requests
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 from pi_ink.spotify import Spotify
 from pi_ink.spotify.models import Track
@@ -382,3 +382,60 @@ class ImageRenderer(IRenderer):
         # TODO photo frame mode of last 50 played tracks if no track has been played in the last 15 minutes
         # this (photo frame) functionality should be in the driver (cmd/spotify_media_controller_command.py)
         return self.render_frame_from_track(track), track
+
+    def render_picture_frame(self, picture: Image) -> Any:
+        frame: Image = Image.new(
+            "RGBA", (600, 448), (255, 0, 0, 255)
+        )  # TODO CHANGE TO BLACK AFTER TESTING
+        pic_cpy: Image = picture.copy()
+        pw, ph = picture.size  # picture width, height
+        dw, dh = 600, 448  # display width, height
+
+        fill_space_with_bg = False
+
+        # resize preserve aspect ratio of picture to fit within display
+        if pw > dw or ph > dh:
+            fill_space_with_bg = True
+            pic_cpy = ImageOps.contain(pic_cpy, (dw, dh), method=Image.LANCZOS)
+
+        if fill_space_with_bg:
+            bg = picture.copy()
+
+            # resize to fill display
+            if pw > dw:
+                th = dh
+                tw = pw * th // ph  # calculate width preserving picture aspect ratio
+
+                # ensure the width of the display is fully filled
+                while tw < dw:
+                    tw += 10
+                    th = ph * tw // pw
+
+                bg = bg.resize((tw, th), Image.LANCZOS)
+
+            if ph > dh:
+                tw = dw
+                th = ph * tw // pw  # calculate height preserving picture aspect ratio
+
+                # ensure the height of the display is fully filled
+                while th < dh:
+                    th += 10
+                    tw = pw * th // ph
+
+                bg = bg.resize((tw, th), Image.LANCZOS)
+
+            # gaussian blur background picture
+            bg = bg.filter(ImageFilter.GaussianBlur(radius=2.5))
+
+            # darken background
+            bg = bg.point(lambda p: p * 0.7)
+
+            # draw bg centered on frame_img
+            bw, bh = bg.size
+            frame.paste(bg, ((dw - bw) // 2, (dh - bh) // 2))
+
+        # draw picture centered on frame_img
+        pw, ph = pic_cpy.size
+        frame.paste(pic_cpy, ((dw - pw) // 2, (dh - ph) // 2))
+
+        return frame
